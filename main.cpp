@@ -71,6 +71,21 @@ void init_mat(vector<vector<T>>& mat, int n) {
     }
 }
 
+template<class T>
+vector<vector<T>> transpose(const vector<vector<T>>& A) {
+    int m = A.size();
+    int n = A[0].size();
+    if (m != n) throw invalid_argument("Impossible to transpose a non-square matrix.");
+    vector<vector<T>> A_transpose(m);
+    init_mat(A_transpose, n);
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            A_transpose[i][j] = A[j][i];
+        }
+    }
+    return A_transpose;
+}
+
 vector<vector<double>> gen_dct_mat(const int n) {
     vector<vector<double>> C(n);
     init_mat(C, n);
@@ -116,6 +131,76 @@ vector<vector<int>> multiply(const vector<vector<int>>& A, const vector<vector<i
     return AB;
 }
 
+vector<vector<double>> multiply(const vector<vector<int>>& A, const vector<vector<double>>& B) {
+    int m = A.size();
+    int n = A[0].size(); // Assume all rows are the same length.
+    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
+    int p = B[0].size();
+
+    vector<vector<double>> AB(m); // m x p matrix = AB
+    init_mat(AB, p);
+
+    // Multiply.
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < p; j++) {
+            for (int k = 0; k < n; k++) {
+                AB[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    
+    return AB;
+}
+
+vector<vector<double>> multiply(const vector<vector<double>>& A, const vector<vector<int>>& B) {
+    int m = A.size();
+    int n = A[0].size(); // Assume all rows are the same length.
+    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
+    int p = B[0].size();
+
+    vector<vector<double>> AB(m); // m x p matrix = AB
+    init_mat(AB, p);
+
+    // Multiply.
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < p; j++) {
+            for (int k = 0; k < n; k++) {
+                AB[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    
+    return AB;
+}
+
+vector<vector<double>> multiply(const vector<vector<double>>& A, const vector<vector<double>>& B) {
+    int m = A.size();
+    int n = A[0].size(); // Assume all rows are the same length.
+    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
+    int p = B[0].size();
+
+    vector<vector<double>> AB(m); // m x p matrix = AB
+    init_mat(AB, p);
+
+    // Multiply.
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < p; j++) {
+            for (int k = 0; k < n; k++) {
+                AB[i][j] += A[i][k] * B[k][j];
+            }
+        }
+    }
+    
+    return AB;
+}
+
+template<class T>
+auto dct(const vector<vector<double>>& C, const vector<vector<double>>& C_transpose, vector<vector<T>> A, 
+        bool rows_first) {
+    if (rows_first) return multiply(C, multiply(A, C_transpose));
+    else return multiply(multiply(C, A), C_transpose);
+}
+
 int main(int argc, char* argv[]) {
     if (argc <= 1) {
         cout << "Please supply the matrix input file name/path as a command-line argument." << endl;
@@ -133,22 +218,22 @@ int main(int argc, char* argv[]) {
     string line = "";
     getline(file, line);
     int N = stoi(line);
-    vector<vector<int>> mat(N);
+    vector<vector<int>> A(N);
     for (int k = 0; getline(file, line) && !all_of(line.begin(), line.end(), isspace); k++) {
         stringstream ss(line);
         string elem;
         for (int i = 0; i < N; i++) {
             getline(ss, elem, ' ');
-            mat[k].push_back(stoi(elem));
+            A[k].push_back(stoi(elem));
         }
     }
 
     cout << "The input matrix is:\n";
-    print_mat(mat);
+    print_mat(A);
     cout << endl;
 
     cout << "The input matrix, squared, is:\n";
-    print_mat(multiply(mat, mat));
+    print_mat(multiply(A, A));
     cout << endl;
 
     vector<int> x = {1, 2, 3, 4, 5, 6, 7, 8};
@@ -157,14 +242,30 @@ int main(int argc, char* argv[]) {
         X[i].push_back(x[i]);
     }
     cout << "Ax = \n";
-    print_mat(multiply(mat, X));
+    print_mat(multiply(A, X));
     cout << endl;
 
     vector<vector<double>> C = gen_dct_mat(8);
-
     cout << "The DCT matrix is:\n";
     print_mat(C);
+    cout << endl;
 
+    vector<vector<double>> C_transpose = transpose(C);
+    cout << "The tranpose of the DCT matrix is:\n";
+    print_mat(C_transpose);
+
+    // Y = TXTt
+    cout << "Result of transforming rows first (not rounding yet), then columns:" << endl;
+    // For rows first, Y = T(XTt)
+    vector<vector<double>> Y_rows_first = dct(C, C_transpose, A, true);// multiply(C, multiply(A, C_transpose));
+    print_mat(Y_rows_first);
+    cout << endl;
+
+    cout << "Result of transforming columns first (not rounding yet), then rows:" << endl;
+    // For columns first, Y = (TX)Tt
+    vector<vector<double>> Y_columns_first = dct(C, C_transpose, A, false);// multiply(multiply(C, A), C_transpose);
+    print_mat(Y_columns_first);
+    
 
     return 0;
 }

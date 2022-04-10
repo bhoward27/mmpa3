@@ -50,13 +50,49 @@ using std::all_of;
 using std::stringstream;
 using std::invalid_argument;
 
-void print_mat(vector<vector<int>> mat) {
+template<class T>
+void print_mat(vector<vector<T>> mat) {
     for (auto row : mat) {
-        for (int x : row) {
+        for (auto x : row) {
             cout << x << ' ';
         }
         cout << endl;
     }
+}
+
+// We assume that m rows in mat already exist, just empty rows though.
+// Initalize all elements to 0.
+template<class T>
+void init_mat(vector<vector<T>>& mat, int n) {
+    for (auto& row : mat) {
+        for (int i = 0; i < n; i++) {
+            row.push_back(0);
+        }
+    }
+}
+
+vector<vector<double>> gen_dct_mat(const int n) {
+    vector<vector<double>> C(n);
+    init_mat(C, n);
+
+    /*
+        DCT matrix element definition:
+            C[i][j] = a*cos(((2j + 1)*i*pi) / (2*N)), for i, j = 0, ..., N - 1
+            a = sqrt(1/N) for i = 0
+            a = sqrt(2/N) for i = 1, ..., N - 1
+    */
+    const double a0 = sqrt(1.0/n);
+    const double ai = sqrt(2.0/n);
+
+    double a;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            a = (i == 0) ? a0 : ai;
+            C[i][j] = a*cos(((2*j + 1)*i*M_PI) / (2*n));
+        }
+    }
+
+    return C;
 }
 
 vector<vector<int>> multiply(const vector<vector<int>>& A, const vector<vector<int>>& B) {
@@ -66,12 +102,7 @@ vector<vector<int>> multiply(const vector<vector<int>>& A, const vector<vector<i
     int p = B[0].size();
 
     vector<vector<int>> AB(m); // m x p matrix = AB
-    // Initialize all rows in AB to 0.
-    for (auto& row : AB) {
-        for (int i = 0; i < p; i++) {
-            row.push_back(0);
-        }
-    }
+    init_mat(AB, p);
 
     // Multiply.
     for (int i = 0; i < m; i++) {
@@ -127,6 +158,12 @@ int main(int argc, char* argv[]) {
     }
     cout << "Ax = \n";
     print_mat(multiply(mat, X));
+    cout << endl;
+
+    vector<vector<double>> C = gen_dct_mat(8);
+
+    cout << "The DCT matrix is:\n";
+    print_mat(C);
 
 
     return 0;

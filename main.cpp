@@ -110,82 +110,19 @@ vector<vector<double>> gen_dct_mat(const int n) {
     return C;
 }
 
-vector<vector<int>> multiply(const vector<vector<int>>& A, const vector<vector<int>>& B) {
-    int m = A.size();
-    int n = A[0].size(); // Assume all rows are the same length.
-    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
-    int p = B[0].size();
-
-    vector<vector<int>> AB(m); // m x p matrix = AB
-    init_mat(AB, p);
-
-    // Multiply.
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            for (int k = 0; k < n; k++) {
-                AB[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-    
-    return AB;
-}
-
-vector<vector<double>> multiply(const vector<vector<int>>& A, const vector<vector<double>>& B) {
-    int m = A.size();
-    int n = A[0].size(); // Assume all rows are the same length.
-    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
-    int p = B[0].size();
-
-    vector<vector<double>> AB(m); // m x p matrix = AB
-    init_mat(AB, p);
-
-    // Multiply.
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            for (int k = 0; k < n; k++) {
-                AB[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-    
-    return AB;
-}
-
-vector<vector<double>> multiply(const vector<vector<double>>& A, const vector<vector<int>>& B) {
-    int m = A.size();
-    int n = A[0].size(); // Assume all rows are the same length.
-    if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
-    int p = B[0].size();
-
-    vector<vector<double>> AB(m); // m x p matrix = AB
-    init_mat(AB, p);
-
-    // Multiply.
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            for (int k = 0; k < n; k++) {
-                AB[i][j] += A[i][k] * B[k][j];
-            }
-        }
-    }
-    
-    return AB;
-}
-
 vector<vector<double>> multiply(const vector<vector<double>>& A, const vector<vector<double>>& B) {
-    int m = A.size();
-    int n = A[0].size(); // Assume all rows are the same length.
+    auto m = A.size();
+    auto n = A[0].size(); // Assume all rows are the same length.
     if (n != B.size()) throw invalid_argument("Number of columns in A must match number of rows in B.");
-    int p = B[0].size();
+    auto p = B[0].size();
 
     vector<vector<double>> AB(m); // m x p matrix = AB
     init_mat(AB, p);
 
     // Multiply.
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < p; j++) {
-            for (int k = 0; k < n; k++) {
+    for (vector<vector<double>>::size_type i = 0; i < m; i++) {
+        for (vector<vector<double>>::size_type j = 0; j < p; j++) {
+            for (vector<vector<double>>::size_type k = 0; k < n; k++) {
                 AB[i][j] += A[i][k] * B[k][j];
             }
         }
@@ -194,11 +131,40 @@ vector<vector<double>> multiply(const vector<vector<double>>& A, const vector<ve
     return AB;
 }
 
+void round(vector<vector<double>>& A) {
+    for (auto& row : A) {
+        for (auto& x : row) {
+            x = round(x);
+        }
+    }
+}
 template<class T>
 auto dct(const vector<vector<double>>& C, const vector<vector<double>>& C_transpose, vector<vector<T>> A, 
         bool rows_first) {
-    if (rows_first) return multiply(C, multiply(A, C_transpose));
-    else return multiply(multiply(C, A), C_transpose);
+    if (rows_first) {
+        auto temp = multiply(C, multiply(A, C_transpose));
+        round(temp);
+        return temp;
+    }
+    else {
+        auto temp = multiply(multiply(C, A), C_transpose);
+        round(temp);
+        return temp;
+    }
+}
+
+template<class T>
+bool equals(const vector<vector<T>>& A, const vector<vector<T>>& B) {
+    int m = A.size();
+    int n = A[0].size();
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if (A[i][j] != B[i][j]) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 int main(int argc, char* argv[]) {
@@ -218,7 +184,7 @@ int main(int argc, char* argv[]) {
     string line = "";
     getline(file, line);
     int N = stoi(line);
-    vector<vector<int>> A(N);
+    vector<vector<double>> A(N);
     for (int k = 0; getline(file, line) && !all_of(line.begin(), line.end(), isspace); k++) {
         stringstream ss(line);
         string elem;
@@ -228,43 +194,28 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    cout << "The input matrix is:\n";
-    print_mat(A);
-    cout << endl;
-
-    cout << "The input matrix, squared, is:\n";
-    print_mat(multiply(A, A));
-    cout << endl;
-
-    vector<int> x = {1, 2, 3, 4, 5, 6, 7, 8};
-    vector<vector<int>> X(8);
-    for (int i = 0; i < 8; i++) {
-        X[i].push_back(x[i]);
-    }
-    cout << "Ax = \n";
-    print_mat(multiply(A, X));
-    cout << endl;
-
-    vector<vector<double>> C = gen_dct_mat(8);
-    cout << "The DCT matrix is:\n";
-    print_mat(C);
-    cout << endl;
-
+    vector<vector<double>> C = gen_dct_mat(N);
     vector<vector<double>> C_transpose = transpose(C);
-    cout << "The tranpose of the DCT matrix is:\n";
-    print_mat(C_transpose);
 
     // Y = TXTt
-    cout << "Result of transforming rows first (not rounding yet), then columns:" << endl;
+    cout << "Result of transforming rows first, then columns:" << endl;
     // For rows first, Y = T(XTt)
     vector<vector<double>> Y_rows_first = dct(C, C_transpose, A, true);// multiply(C, multiply(A, C_transpose));
     print_mat(Y_rows_first);
     cout << endl;
 
-    cout << "Result of transforming columns first (not rounding yet), then rows:" << endl;
+    cout << "Result of transforming columns first, then rows:" << endl;
     // For columns first, Y = (TX)Tt
     vector<vector<double>> Y_columns_first = dct(C, C_transpose, A, false);// multiply(multiply(C, A), C_transpose);
     print_mat(Y_columns_first);
+    cout << endl;
+
+    if (equals(Y_rows_first, Y_columns_first)) {
+        cout << "The two matrices are equal." << endl;
+    }
+    else {
+        cout << "The two matrices are not equal." << endl;
+    }
     
 
     return 0;

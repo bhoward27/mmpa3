@@ -2,7 +2,7 @@ CC = g++
 STD = -std=c++17
 D = -Og -D DEBUG
 R = -O3
-CONFIG = $(D)
+CONFIG = $(R)
 OFLAGS = $(STD) -g -c $(CONFIG) -Wall
 CFLAGS = $(STD) -o a.out
 OBJS = main.o
